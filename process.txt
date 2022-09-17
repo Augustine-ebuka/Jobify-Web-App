@@ -1,0 +1,101 @@
+possible process and steps to follow while creating a login system.
+/**
+* register
+
+//import your UserSchema from your model
+//custom errros codes
+
+1.in your model file, create a function that hash the password that users are bringing in.
+(by this time, already assume you have created your model schema)
+
+UserSchema.pre('save', async function () {
+  const salt = await bcrypt.genSalt(10)
+  this.password = await bcrypt.hash(this.password, salt)
+})
+
+2. after then, in your auth, get all the details that users want to register with
+const register = async (req, res) => {
+  >>const user = await User.create({ ...req.body })
+
+3. by using the spread operator ...req.body, users are entering the correct details according to your schema
+
+4. create a json web token functionality either alrady created in the model or creat in the auth.
+UserSchema.methods.createJWT = function () {
+  return jwt.sign(
+    { userId: this._id, name: this.name },
+    process.env.JWT_SECRET,
+    {
+      expiresIn: process.env.JWT_LIFETIME,
+    }
+  )
+}
+// this will be display immediately after you create step 3 in the model
+  const token = user.createJWT()
+
+5. this step markes the last step in this process to register a user into our database
+then we will have to return our response from the server
+res.status(StatusCodes.CREATED).json({user:{username:modelname.username,password:modelname.password etc.}})
+}
+
+login
+
+1. we assume that users are going to be logging in with their password and email
+
+2. collect the password and email and through the req.body 
+const { email, password } = req.body
+
+3. after that throw an error if a user is trying to submit details without entering anything
+we dont want an empty password and email to be submitted
+
+ if (!email || !password) {
+    throw new BadRequestError('Please provide email and password')
+  }
+
+4. now that they have entered something, we want to know if the email and password they entered actually
+match what is in our database.
+
+5. that means we have to travel to our with a uniq identiy such as emailn or _id
+const user = await User.findOne({ email });
+ we have to check if something like this email exist in our database
+ if (!user) {
+    throw new UnauthenticatedError('Invalid Credentials')
+  }
+
+6. we also want to check if password also is correct. because those are the 2 criteria to sign in
+(dont forget we hashed our password when we were registering the user, hashing ,means changing the password entered
+by the user to something no one can understand. imagine someeone broke into our database, the person wont be able to see 
+the original password to sign in.)
+
+7. so for us to check that the password is correct we have to use thesame system we used to hash 
+in order to verify
+ const isPasswordCorrect = await user.comparePassword(password)
+
+8. we now check if the password is correct with the one in the database
+if (!isPasswordCorrect) {
+    throw new UnauthenticatedError('Invalid Credentials')
+  }
+
+  //we are using a method called guard clause method in programming to check if the quest is negative
+
+9. so if passwords and email are not correct, we will get and error , otherwise we get the last steps
+
+
+10. const token = user.createJWT()
+  res.status(StatusCodes.OK).json({
+    user: {
+      name: user.name,
+      lastName: user.lastName,
+      email: user.email,
+      location: user.location,
+      token
+    }
+  });
+};
+
+immediately password and email are correct, we create our token again and we let our server to return 
+the result
+
+there is another part that we will talk about verifying our token to be able to access whatever that
+we want to share by logging in or signing in....
+
+ */
